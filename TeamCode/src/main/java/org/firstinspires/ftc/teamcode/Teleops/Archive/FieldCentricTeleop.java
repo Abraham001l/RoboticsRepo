@@ -27,7 +27,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.firstinspires.ftc.teamcode.Teleops;
+package org.firstinspires.ftc.teamcode.Teleops.Archive;
 
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -68,7 +68,7 @@ import java.lang.Math;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Hunga Munga: FiledCentricDriving", group="Iterative Opmode")
+@TeleOp(name="FieldCentricDriving", group="Iterative Opmode")
 
 public class FieldCentricTeleop extends OpMode
 
