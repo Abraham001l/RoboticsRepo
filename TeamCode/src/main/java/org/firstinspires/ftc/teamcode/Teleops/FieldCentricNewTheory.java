@@ -68,9 +68,9 @@ import java.lang.Math;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="FieldCentricDrivingCode", group="Iterative Opmode")
+@TeleOp(name="FieldCentricDrivingCodeNewTheory", group="Iterative Opmode")
 
-public class FieldCentricCode extends OpMode
+public class FieldCentricNewTheory extends OpMode
 
 {
     // Declare OpMode members.
@@ -213,10 +213,13 @@ public class FieldCentricCode extends OpMode
     }
 
     public double getNewXY(double x, double y, String xy) {
-        double cosTheta = Math.cos(currentActualAngleRadians);
-        double sinTheta = Math.sin(currentActualAngleRadians);
-        double newX = (x*sinTheta)-(y*cosTheta);
-        double newY = (x*cosTheta)+(y*sinTheta);
+        double joyStickAngle = Math.tan(y/x);
+        double expectedOutput = (getRobotAngle()-90)+joyStickAngle;
+        double difexpectedWanted = expectedOutput - joyStickAngle;
+        double newAngle = joyStickAngle - difexpectedWanted;
+
+        double newX = ;
+        double newY = 4;
 
         if (xy.equals("X")) {
             return newX;
@@ -231,6 +234,7 @@ public class FieldCentricCode extends OpMode
 
     public void calculateCurAngle() {
         double imuAngle = this.getDegreesAngle();
+        imuAngle += 90;
 //        currentAngle = imuAngle < 0? 360 + imuAngle: imuAngle;
         if (imuAngle < 0) {
             currentActualAngle = 360 + imuAngle;
@@ -240,6 +244,10 @@ public class FieldCentricCode extends OpMode
         }
         // to convert degrees to radians you multiply degrees by pi/180
         currentActualAngleRadians = currentActualAngle*(Math.PI/180);
+    }
+
+    public double getRobotAngle() {
+        return 5;
     }
 
 }
