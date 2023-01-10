@@ -112,15 +112,15 @@ public class LowAttempt extends LinearOpMode
          */
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
 
-        Trajectory toLow = drive.trajectoryBuilder (new Pose2d(-36, -68), Math.toRadians(90))
-                .splineTo(new Vector2d(-38, -24), Math.toRadians(180))
+        Trajectory toLow = drive.trajectoryBuilder (new Pose2d(-36, -68), Math.toRadians(180))
+                .splineTo(new Vector2d(-38, -24), Math.toRadians(270))
                 .build();
 
         Trajectory toLowFR = drive.trajectoryBuilder(toLow.end())
                 .forward(4)
                 .build();
 
-        Trajectory toStack0 = drive.trajectoryBuilder(new Pose2d(-42, -24), Math.toRadians(180))
+        Trajectory toStack0 = drive.trajectoryBuilder(new Pose2d(-42, -24), Math.toRadians(270))
                 .back(5)
                 .build();
 
@@ -129,7 +129,7 @@ public class LowAttempt extends LinearOpMode
                 .build();
 
         Trajectory toStack2 = drive. trajectoryBuilder(toStack1.end())
-                .splineTo(new Vector2d( -66, -14), Math.toRadians(180))
+                .splineTo(new Vector2d( -66, -14), Math.toRadians(270))
                 .build();
 
         Trajectory backLow1 = drive.trajectoryBuilder(toStack2.end())
@@ -145,7 +145,7 @@ public class LowAttempt extends LinearOpMode
                 .build();
 
         Trajectory middle = drive.trajectoryBuilder(toLowFR2.end())
-                .splineTo(new Vector2d(40, 36), Math.toRadians(90))
+                .splineTo(new Vector2d(40, 36), Math.toRadians(180))
                 .build();
 
         Trajectory left = drive.trajectoryBuilder(middle.end())
@@ -243,7 +243,9 @@ public class LowAttempt extends LinearOpMode
         }
 
         /* picking up pre-placed cone */
-        claw.setPosition(1);
+        claw.setPosition(0.69);
+        sleep(1000);
+
         viperSlide.setTargetPosition(1325);
         viperSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         viperSlide.setPower(1);
@@ -253,7 +255,7 @@ public class LowAttempt extends LinearOpMode
         drive.followTrajectory(toLow);
         drive.followTrajectory(toLowFR);
 
-        claw.setPosition(0.7);
+        claw.setPosition(1);
         sleep(400);
 
         drive.followTrajectory(toStack0);

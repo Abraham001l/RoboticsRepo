@@ -217,9 +217,9 @@ public class FieldCentricNewTheory extends OpMode
         double expectedOutput = (getRobotAngle()-90)+joyStickAngle;
         double difexpectedWanted = expectedOutput - joyStickAngle;
         double newAngle = joyStickAngle - difexpectedWanted;
-
-        double newX = ;
-        double newY = 4;
+        double inputMagnitude = Math.sqrt(Math.pow(x-0, 2)+Math.pow(y-0, 2));
+        double newX = Math.cos(newAngle)*inputMagnitude;
+        double newY = Math.sin(newAngle)*inputMagnitude;
 
         if (xy.equals("X")) {
             return newX;
