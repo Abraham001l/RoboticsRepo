@@ -25,17 +25,19 @@ import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.AprilTagDetectionPipeline;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
+import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 import org.openftc.apriltag.AprilTagDetection;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 import java.util.ArrayList;
-@Autonomous(name = "LowAttempt")
-public class LowAttempt extends LinearOpMode
+@Autonomous(name = "SplineAuton")
+public class SplineAuton extends LinearOpMode
 {
     OpenCvCamera camera;
     AprilTagDetectionPipeline aprilTagDetectionPipeline;
@@ -53,36 +55,36 @@ public class LowAttempt extends LinearOpMode
     double cy = 221.506;
     // UNITS ARE METERS
     double tagsize = 0.166;
-    //    int ID_TAG_OF_INTEREST = 18; // Tag ID 18 from the 36h11 family
+    int ID_TAG_OF_INTEREST = 18; // Tag ID 18 from the 36h11 family
     int LEFT = 1;
     int MIDDLE = 2;
     int RIGHT = 3;
     AprilTagDetection tagOfInterest = null;
     @Override
-    public void runOpMode()
+    public void runOpMode() throws InterruptedException
     {
-//        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-//        camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
-//        aprilTagDetectionPipeline = new AprilTagDetectionPipeline(tagsize, fx, fy, cx, cy);
+        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
+        aprilTagDetectionPipeline = new AprilTagDetectionPipeline(tagsize, fx, fy, cx, cy);
         claw = hardwareMap.get(Servo.class, "claw");
         viperSlide = hardwareMap.get(DcMotor.class, "viperSlide");
         viperSlide.setDirection(DcMotor.Direction.FORWARD);
         viperSlide.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         viperSlide.setMode(DcMotor.RunMode.RESET_ENCODERS);
         viperSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-//        camera.setPipeline(aprilTagDetectionPipeline);
-//        camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
-//        {
-//            @Override
-//            public void onOpened()
-//            {
-//                camera.startStreaming(800,448, OpenCvCameraRotation.UPRIGHT);
-//            }
-//            @Override
-//            public void onError(int errorCode)
-//            {
-//            }
-//        });
+        camera.setPipeline(aprilTagDetectionPipeline);
+        camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        {
+            @Override
+            public void onOpened()
+            {
+                camera.startStreaming(800,448, OpenCvCameraRotation.UPRIGHT);
+            }
+            @Override
+            public void onError(int errorCode)
+            {
+            }
+        });
         telemetry.setMsTransmissionInterval(50);
         /*
          * The INIT-loop:
@@ -90,56 +92,82 @@ public class LowAttempt extends LinearOpMode
          */
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
 
-        Pose2d startPose = new Pose2d(-36, -68, Math.toRadians(270));
+        Pose2d startPose = new Pose2d(-41, -66, Math.toRadians(270));
 
         drive.setPoseEstimate(startPose);
 
-        Trajectory toLow = drive.trajectoryBuilder (startPose)
-                .strafeRight(56)
-                .build();
-
-        Trajectory toLow2 = drive.trajectoryBuilder (toLow.end())
+        TrajectorySequence test = drive.trajectorySequenceBuilder(startPose)
+                .strafeLeft(8)
+                .lineToSplineHeading(new Pose2d(-44, -22, Math.toRadians(206)))
+                .addTemporalMarker(0, () -> {
+                    viperSlide.setTargetPosition(1400);
+                    viperSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    viperSlide.setPower(1);
+                })
+                .addTemporalMarker(2, () -> {
+                    viperSlide.setPower(0);
+                })
                 .forward(5)
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> {
+                    claw.setPosition(0);
+                })
+                .UNSTABLE_addTemporalMarkerOffset(1, () -> {
+                    viperSlide.setTargetPosition(900);
+                    viperSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    viperSlide.setPower(1);
+                })
+                .UNSTABLE_addTemporalMarkerOffset(2, () -> {
+                    viperSlide.setPower(0);
+                })
+                .lineToSplineHeading(new Pose2d(-68, -13, Math.toRadians(180)))
+                .UNSTABLE_addTemporalMarkerOffset(-0.4, () -> {
+                    viperSlide.setTargetPosition(550);
+                    viperSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    viperSlide.setPower(-0.5);
+                })
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> {
+                    claw.setPosition(1);
+                })
+                .UNSTABLE_addTemporalMarkerOffset(0.8, () -> {
+                    viperSlide.setPower(0);
+                })
+                .waitSeconds(1)
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> {
+                    viperSlide.setTargetPosition(1450);
+                    viperSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    viperSlide.setPower(1);
+                })
+                .UNSTABLE_addTemporalMarkerOffset(1.5, () -> {
+                    viperSlide.setPower(0);
+                })
+                .back(19)
+                .turn(Math.toRadians(90))
+                .forward(9)
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> {
+                    claw.setPosition(0);
+                })
+                .back(10)
+                .UNSTABLE_addTemporalMarkerOffset(0, () -> {
+                    viperSlide.setTargetPosition(0);
+                    viperSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    viperSlide.setPower(-1);
+                })
+                .UNSTABLE_addTemporalMarkerOffset(2, () -> {
+                    viperSlide.setPower(0);
+                })
+                .waitSeconds(1)
                 .build();
 
-        Trajectory toStack01 = drive.trajectoryBuilder(new Pose2d(-49, -23), Math.toRadians(270))
-                .back(8)
+        Trajectory left = drive.trajectoryBuilder(test.end())
+                .strafeRight(16)
                 .build();
 
-//        Pose2d toStack11Start = toStack01.end();
-
-        Trajectory toStack11 = drive.trajectoryBuilder(toStack01.end())
-//                .splineTo(new Vector2d(-50, -5), Math.toRadians(262))
-                .strafeRight(14.5)
+        Trajectory middle = drive.trajectoryBuilder(test.end())
+                .strafeLeft(18)
                 .build();
 
-        Trajectory toStack21 = drive. trajectoryBuilder(toStack11.end())
-                .forward(39)
-                .build();
-
-        Trajectory backLow1 = drive.trajectoryBuilder(toStack21.end())
-//                .splineTo(new Vector2d(-51, -18), Math.toRadians(270))
-                .back(31)
-                .build();
-
-        Trajectory backLow2 = drive.trajectoryBuilder(backLow1.end())
-                .strafeLeft(20)
-                .build();
-
-        Trajectory backLow3 = drive.trajectoryBuilder(backLow2.end())
-                .forward(7)
-                .build();
-
-        Trajectory middle = drive.trajectoryBuilder(backLow3.end())
-                .strafeLeft(24)
-                .build();
-
-        Trajectory left = drive.trajectoryBuilder(middle.end())
-                .strafeLeft(22)
-                .build();
-
-        Trajectory right = drive.trajectoryBuilder(middle.end())
-                .strafeRight(25)
+        Trajectory right = drive.trajectoryBuilder(test.end())
+                .strafeLeft(48)
                 .build();
         while (!isStarted() && !isStopRequested())
         {
@@ -216,47 +244,48 @@ public class LowAttempt extends LinearOpMode
             parking = "Right";
         }
 
+
         /* picking up pre-placed cone */
-        claw.setPosition(1);
-        sleep(1000);
+        //claw.setPosition(1);
+//        sleep(1000);
 
-        viperSlide.setTargetPosition(1500);
-        viperSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        viperSlide.setPower(1);
-        sleep(900);
-        viperSlide.setPower(0);
-        drive.followTrajectory(toLow);
-        drive.followTrajectory(toLow2);
+        //viperSlide.setTargetPosition(1550);
+        //viperSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        //viperSlide.setPower(1);
+        //sleep(900);
+        //viperSlide.setPower(0);
+        //drive.followTrajectory(toLow);
+//        //drive.followTrajectory(toLow2);
 
-        claw.setPosition(0.4);
-        sleep(400);
+//        claw.setPosition(0.4);
+//        sleep(400);
 
-        drive.followTrajectory(toStack01);
-        drive.followTrajectory(toStack11);
-        drive.followTrajectory(toStack21);
+        //drive.followTrajectory(toStack01);
+        //drive.followTrajectory(toStack11);
+//        //drive.followTrajectory(toStack21);
         // 5th cone
-        viperSlide.setTargetPosition(630);
-        viperSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        viperSlide.setPower(-1);
-        sleep(800);
-        viperSlide.setPower(0);
-        claw.setPosition(1);
-        sleep(600);
-        viperSlide.setTargetPosition(1500);
-        viperSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        viperSlide.setPower(1);
-        sleep(800);
-        viperSlide.setPower(0);
-        drive.followTrajectory(backLow1);
-        drive.followTrajectory(backLow2);
-        drive.followTrajectory(backLow3);
-        claw.setPosition(0.4);
-        sleep(400);
-        drive.followTrajectory(toStack01);
+//        viperSlide.setTargetPosition(590);
+//        viperSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//        viperSlide.setPower(-1);
+//        sleep(800);
+//        viperSlide.setPower(0);
+//        claw.setPosition(1);
+//        sleep(600);
+//        viperSlide.setTargetPosition(1550);
+//        viperSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//        viperSlide.setPower(1);
+//        sleep(800);
+//        viperSlide.setPower(0);
+//        //drive.followTrajectory(backLow1);
+//        //drive.followTrajectory(backLow2);
+////        //drive.followTrajectory(backLow3);
+//        claw.setPosition(0.4);
+//        sleep(400);
+        //drive.followTrajectory(toStack01);
 
-        drive.followTrajectory(middle);
-//        drive.followTrajectory(toStack11);
-//        drive.followTrajectory(toStack21);
+        //drive.followTrajectory(middle);
+//        //drive.followTrajectory(toStack11);
+//        //drive.followTrajectory(toStack21);
 //        // 4th cone
 //        viperSlide.setTargetPosition(440);
 //        viperSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -270,14 +299,14 @@ public class LowAttempt extends LinearOpMode
 //        viperSlide.setPower(1);
 //        sleep(850);
 //        viperSlide.setPower(0);
-//        drive.followTrajectory(backLow1);
-//        drive.followTrajectory(backLow2);
-//        drive.followTrajectory(backLow3);
+//        //drive.followTrajectory(backLow1);
+//        //drive.followTrajectory(backLow2);
+//        //drive.followTrajectory(backLow3);
 //        claw.setPosition(0.4);
 //        sleep(400);
-//        drive.followTrajectory(toStack01);
-//        drive.followTrajectory(toStack11);
-//        drive.followTrajectory(toStack21);
+//        //drive.followTrajectory(toStack01);
+//        //drive.followTrajectory(toStack11);
+//        //drive.followTrajectory(toStack21);
 //        // 3rd cone
 //        viperSlide.setTargetPosition(320);
 //        viperSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -291,14 +320,14 @@ public class LowAttempt extends LinearOpMode
 //        viperSlide.setPower(1);
 //        sleep(1000);
 //        viperSlide.setPower(0);
-//        drive.followTrajectory(backLow1);
-//        drive.followTrajectory(backLow2);
-//        drive.followTrajectory(backLow3);
+//        //drive.followTrajectory(backLow1);
+//        //drive.followTrajectory(backLow2);
+//        //drive.followTrajectory(backLow3);
 //        claw.setPosition(0.4);
 //        sleep(400);
-//        drive.followTrajectory(toStack01);
-//        drive.followTrajectory(toStack11);
-//        drive.followTrajectory(toStack21);
+//        //drive.followTrajectory(toStack01);
+//        //drive.followTrajectory(toStack11);
+//        //drive.followTrajectory(toStack21);
 //        // 2nd cone
 //        viperSlide.setTargetPosition(190);
 //        viperSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -312,13 +341,13 @@ public class LowAttempt extends LinearOpMode
 //        viperSlide.setPower(1);
 //        sleep(1100);
 //        viperSlide.setPower(0);
-//        drive.followTrajectory(backLow1);
-//        drive.followTrajectory(backLow2);
+//        //drive.followTrajectory(backLow1);
+//        //drive.followTrajectory(backLow2);
 //        claw.setPosition(0.4);
 //        sleep(400);
-//        drive.followTrajectory(toStack01);
-//        drive.followTrajectory(toStack11);
-//        drive.followTrajectory(toStack21);
+//        //drive.followTrajectory(toStack01);
+//        //drive.followTrajectory(toStack11);
+//        //drive.followTrajectory(toStack21);
 //        // 1st cone
 //        viperSlide.setTargetPosition(10);
 //        viperSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -332,17 +361,24 @@ public class LowAttempt extends LinearOpMode
 //        viperSlide.setPower(1);
 //        sleep(1250);
 //        viperSlide.setPower(0);
-//        drive.followTrajectory(backLow1);
-//        drive.followTrajectory(backLow2);
-//        drive.followTrajectory(backLow3);
+//        //drive.followTrajectory(backLow1);
+//        //drive.followTrajectory(backLow2);
+//        //drive.followTrajectory(backLow3);
 //        claw.setPosition(0.4);
 //        sleep(400);
-//        drive.followTrajectory(middle);
-//        if (parking == "Left") {
-//            drive.followTrajectory(left);
-//        } else if (parking == "Right") {
-//            drive.followTrajectory(right);
-//        }
+//        //drive.followTrajectory(middle);
+        if(!isStopRequested()) {
+            claw.setPosition(1);
+        }
+        sleep(1000);
+        drive.followTrajectorySequence(test);
+        if (parking == "Left") {
+            drive.followTrajectory(left);
+        } else if (parking == "Right") {
+            drive.followTrajectory(right);
+        } else if (parking == "Middle") {
+            drive.followTrajectory(middle);
+        }
         /* You wouldn't have this in your autonomous, this is just to prevent the sample from ending */
         while (opModeIsActive()) {sleep(20);}
     }
@@ -357,3 +393,5 @@ public class LowAttempt extends LinearOpMode
         telemetry.addLine(String.format("Rotation Roll: %.2f degrees", Math.toDegrees(detection.pose.roll)));
     }
 }
+
+
