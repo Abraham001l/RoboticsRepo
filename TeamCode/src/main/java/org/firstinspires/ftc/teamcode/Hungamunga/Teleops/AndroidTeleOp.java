@@ -11,7 +11,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@TeleOp(name = "AndHMTeleOp",
+@TeleOp(name = "AndroidTeleop",
         group = "Iterative Opmode")
 public class AndroidTeleOp extends OpMode {
 
