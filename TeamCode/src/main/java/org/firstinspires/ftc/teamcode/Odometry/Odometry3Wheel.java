@@ -73,11 +73,16 @@ public class Odometry3Wheel extends Thread{
         calcDTheta();
         calcDStr();
         calcAngle();
-        calcR0();
-        calcR1();
-        calcRelDX();
-        calcRelDY();
-        calcNewXY();
+        if (dTheta != 0) {
+            calcR0();
+            calcR1();
+            calcRelDX();
+            calcRelDY();
+            calcNewXY();
+        } else {
+
+        }
+
     }
 
     public void updateDeltaEncPos() {
@@ -105,13 +110,32 @@ public class Odometry3Wheel extends Thread{
         r1 = dStr/dTheta;
     }
     public void calcRelDX() {
-        relDX = (r0*Math.sin(dTheta))-(r1*(1-Math.cos(dTheta)));
+        if (dTheta != 0) {
+            relDX = (r0*Math.sin(dTheta))-(r1*(1-Math.cos(dTheta)));
+        } else {
+            relDX = dFwd;
+        }
     }
     public void calcRelDY() {
-        relDY = (r1*Math.sin(dTheta))+(r0*(1-Math.cos(dTheta)));
+        if (dTheta != 0) {
+            relDY = (r1*Math.sin(dTheta))+(r0*(1-Math.cos(dTheta)));
+        } else {
+            relDY = dStr;
+        }
     }
     public void calcNewXY() {
         x = x+(relDX*Math.cos(angle))-(relDY*Math.sin(angle));
         y = y+(relDY*Math.cos(angle))-(relDX*Math.sin(angle));
     }
+
+    public double getX() {
+        return x;
+    }
+    public double getY() {
+        return y;
+    }
+    public double getAngle() {
+        return angle;
+    }
+
 }
